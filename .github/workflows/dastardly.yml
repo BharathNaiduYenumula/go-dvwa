@@ -1,0 +1,44 @@
+name: Dastardly Scan
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  dastardly_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.21
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Start the Application
+        run: |
+          go run main.go &
+          sleep 20  # Wait for the app to start
+
+      - name: Run Dastardly Scan
+        run: |
+          docker run --rm -v $(pwd):/dastardly dastardly scan --url http://localhost:8080 --output dastardly-report.html
+
+      - name: Commit and Push Dastardly Report
+        run: |
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add dastardly-report.html
+          git commit -m "Add latest Dastardly scan report"
+          git push origin master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
