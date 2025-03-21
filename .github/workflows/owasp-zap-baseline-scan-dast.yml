@@ -3,10 +3,10 @@ name: OWASP ZAP Baseline Scan
 on:
   push:
     branches:
-      - main
+      - master
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   zap_scan:
@@ -41,6 +41,6 @@ jobs:
           mv zap-report.html zap-scan-results.html  # Rename for clarity
           git add zap-scan-results.html
           git commit -m "Add latest OWASP ZAP Baseline Scan report"
-          git push origin main
+          git push origin master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
