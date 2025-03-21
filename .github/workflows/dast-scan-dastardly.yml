@@ -1,0 +1,52 @@
+name: Dastardly Scan
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  dastardly_scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker
+        run: |
+          docker build -t vulnerable-app .
+          docker run -d -p 8000:8000 --name vuln-container vulnerable-app
+
+      - name: Wait for Application to be Ready
+        run: |
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8000 > /dev/null; then
+              echo "Application is up!"
+              break
+            fi
+            echo "Still waiting..."
+            sleep 5
+          done
+
+      - name: Pull Dastardly Image
+        run: docker pull ghcr.io/portswigger/dastardly:latest
+
+      - name: Run Dastardly Scan
+        run: |
+          docker run --rm -v $(pwd):/dastardly-output ghcr.io/portswigger/dastardly:latest scan http://host.docker.internal:8000
+          mv dastardly-output/report.html dastardly-report.html
+
+      - name: Commit and Push Dastardly Report
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add dastardly-report.html
+          git commit -m 'Add Dastardly scan report' || echo "No changes to commit"
+          git pull --rebase origin master || echo "Rebase failed, trying push anyway"
+          git push origin master || echo "Push failed, possibly due to conflicts"
