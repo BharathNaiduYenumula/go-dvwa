@@ -31,7 +31,7 @@ jobs:
 
       - name: Run Dastardly Scan
         run: |
-          docker run --rm -v $(pwd):/dastardly dastardly scan --url http://localhost:8080 --output dastardly-report.html
+          docker run --rm -v $(pwd):/dastardly portswigger/dastardly scan --url http://localhost:8080 --output /dastardly/dastardly-report.html
 
       - name: Commit and Push Dastardly Report
         run: |
